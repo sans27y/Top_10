@@ -1,0 +1,55 @@
+TOP 10 OST — INTEGRACIÓN SUPABASE
+
+1. Conserva una copia de seguridad de tu sitio actual.
+2. En Supabase > SQL Editor, ejecuta TODO el archivo supabase_setup.sql.
+3. En Supabase > Authentication > Providers > Email, mantén Email habilitado y desactiva Confirm email. La web pide usuario y contraseña; no solicita Gmail.
+4. Copia todos los archivos de esta carpeta a la misma carpeta donde está publicado tu sitio. No cambies los nombres.
+5. Abre index.html y crea una cuenta NUEVA. Las cuentas antiguas guardadas solo en localStorage no se migran automáticamente; deben registrarse de nuevo.
+6. Prueba: registra dos usuarios, sube un MP3 desde uno, abre Explorar/Top 10 como visitante, y califica/comenta con el segundo usuario.
+
+IMPORTANTE: supabase-config.js contiene la clave publishable del proyecto que compartiste. Es una clave pública apta para frontend; nunca pongas aquí una clave service_role/secret. La seguridad depende de las políticas RLS incluidas en el SQL.
+
+Las calificaciones y comentarios se guardan en Supabase y se comparten entre usuarios. Un usuario puede actualizar su propia calificación por canción. Los comentarios quedan asociados al autor. Visitantes pueden leerlos, pero deben iniciar sesión para publicar.
+
+La carpeta de canciones debe ser el bucket público llamado canciones. Se conserva el límite de 2 MB por MP3.
+
+ACTUALIZACIÓN: imágenes y límite de 3 MB
+1. En Supabase abre SQL Editor y ejecuta MIGRACION_SUPABASE.sql.
+2. La tabla canciones_publicadas recibirá las columnas subida_por y cover_path.
+3. Se crea/configura el bucket público portadas.
+4. Cada publicación requiere un MP3 y una portada JPG, PNG o WEBP. Audio e imagen admiten hasta 3 MB cada uno.
+5. Después reemplaza los archivos del proyecto por los de este ZIP y recarga Live Server con Ctrl+F5.
+
+
+CORRECCION DE CALIFICACIONES Y TOP 10:
+1. En Supabase abre SQL Editor > New query.
+2. Copia y ejecuta TODO MIGRACION_SUPABASE.sql.
+3. Espera el mensaje Success.
+4. Recarga la web con Ctrl+F5 desde Live Server.
+Este SQL crea/verifica las tablas compartidas calificaciones y comentarios, sus permisos RLS y los buckets. Si no ejecutas esta migracion, las calificaciones y comentarios no podran consultarse.
+
+
+ULTIMOS AJUSTES:
+- Explorar muestra el catálogo original del Top 10 con sus portadas y las canciones de la comunidad.
+- Las estrellas de Explorar usan el mismo estilo visual que Top 10.
+- Las calificaciones se precargan en una sola consulta por página.
+- Los comentarios se consultan solo al desplegar cada sección.
+- Las imágenes usan carga diferida y los audios no descargan metadatos hasta reproducirse.
+- Top 10 conserva las canciones originales aunque falle temporalmente la consulta de canciones comunitarias.
+
+
+ULTIMO AJUSTE DE INTERFAZ:
+- Comentarios ahora tiene etiqueta visible y flecha que rota al desplegar.
+- Reproductor personalizado con play/pausa, barra de progreso, tiempo transcurrido/duración y control de volumen.
+- Se mantiene la carga diferida de audio y el estilo visual oscuro/cian del sitio.
+
+
+CORRECCION DE ERROR DE RENDERIZADO:
+- Corregido el boton del reproductor: el helper DOM ahora recibe el texto como atributo, evitando TypeError al construir las tarjetas del Top 10.
+- Explorar deja espacio para el panel lateral para que no tape el encabezado.
+- Se registra el error real del Top 10 en la consola si ocurre otro problema.
+
+
+AJUSTE FINAL DEL REPRODUCTOR:
+- Control de volumen alineado a la derecha en la misma fila que play, tiempo y barra de progreso.
+- Distribución adaptable a pantallas estrechas sin que el volumen salte a una segunda fila.
