@@ -1,3 +1,4 @@
+import React from 'react'
 import { useEffect, useState } from 'react'
 import LegacyPage from './components/LegacyPage.jsx'
 
@@ -22,12 +23,6 @@ export default function App() {
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
-
-  function navigate(next) {
-    const url = next === 'inicio' ? window.location.pathname : `${window.location.pathname}?page=${next}`
-    window.history.pushState({}, '', url)
-    setPage(next)
-  }
 
   return <LegacyPage title={pages[page].title} file={pages[page].file} />
 }
