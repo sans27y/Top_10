@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explorar canciones · Top 10 OST</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://vlzdhayqmeahsxebqyjj.supabase.co">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="comun.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--dark); color:var(--text); font-family:'Exo 2',sans-serif; font-weight:300; }
+  .page-main { max-width:1400px; margin:0 auto; padding:48px 32px 80px; margin-left:210px; }
+  .page-main h1 { font-family:'Rajdhani',sans-serif; font-size:clamp(2rem,4vw,3rem); color:#fff; margin-bottom:8px; }
+  .intro { color:var(--text-dim); line-height:1.7; margin-bottom:28px; }
+  .explore-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:22px; }
+  .explore-card { min-width:0; overflow:hidden; border:1px solid var(--border); border-radius:15px; background:var(--surface); transition:border-color .2s,transform .2s; }
+  .explore-card:hover { border-color:var(--border-hover); transform:translateY(-3px); }
+  .explore-cover { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:var(--surface2); }
+  .explore-body { padding:20px; display:flex; flex-direction:column; gap:12px; }
+  .explore-body h2 { font:700 1.55rem 'Rajdhani',sans-serif; color:#fff; }
+  .explore-meta { color:var(--text-dim); line-height:1.6; }
+  .song-badge { color:var(--cyan); font:600 .75rem 'Rajdhani',sans-serif; letter-spacing:.12em; }
+  .rating-box { margin-top:8px; padding:12px 16px; border:1px solid var(--border); border-radius:10px; background:rgba(0,206,255,.06); }
+  .rating-info { color:var(--cyan)!important; font-family:'Rajdhani',sans-serif; font-weight:600; margin-bottom:7px; text-align:left!important; }
+  .rating-stars { display:flex; gap:7px; }
+  .rating-star { border:0; background:transparent; color:#657789; font-size:1.8rem; cursor:pointer; padding:0 3px; }
+  .rating-star.selected,.rating-star:not(:disabled):hover { color:#ffd34e; }
+  .rating-star:disabled { cursor:default; opacity:.75; }
+  .rating-box .muted { font-size:.8rem; margin-top:5px; text-align:left; }
+  @media(max-width:760px){.page-main{margin-left:0;padding:360px 16px 60px}.explore-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="page-main">
+  <h1>Explorar canciones</h1>
+  <p class="intro">Explora las bandas sonoras originales del Top 10 y las canciones compartidas por la comunidad. Escucha, califica y comenta.</p>
+  <div id="catalogo"><p class="msg msg-info">Cargando catálogo...</p></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="cloud-songs.js"></script>
+<script src="cloud-community.js"></script>
+<script src="app.js"></script>
+<script src="catalogo-top10.js"></script>
+<script>
+mountUserPanel('explorar.html');
+var cont=document.getElementById('catalogo');
+function makeCard(song,isCommunity){
+  var image=song.img||song.cover_url||'https://placehold.co/900x506/131a22/00ceff?text=Portada+no+disponible';
+  var meta=[
+    el('b',{text:'Videojuego: '}),document.createTextNode(song.videojuego||song.titulo),
+    el('br'),el('b',{text:'Compositor: '}),document.createTextNode(song.compositor||'No especificado')
+  ];
+  if(isCommunity){
+    meta.push(el('br'),el('b',{text:'Subida por: '}),document.createTextNode(song.subida_por||'Usuario'));
+  }
+  var card=el('article',{class:'explore-card'},[
+    el('img',{class:'explore-cover',src:image,alt:'Portada de '+song.titulo,loading:'lazy',decoding:'async'}),
+    el('div',{class:'explore-body'},[
+      el('span',{class:'song-badge',text:isCommunity?'🎧 CANCIÓN DE LA COMUNIDAD':'🏆 TOP 10 ORIGINAL'}),
+      el('h2',{text:song.titulo}),
+      el('p',{class:'explore-meta'},meta),
+      buildAudio(song.audio||song.audio_url),
+      buildRating(String(song.id)),
+      buildComments(String(song.id))
+    ])
+  ]);
+  return card;
+}
+(async function loadCatalog(){
+  var original=(window.TOP10||[]).map(function(song){return Object.assign({},song);});
+  var community=[];
+  var communityError=null;
+  try{community=await CloudSongs.list();}
+  catch(error){communityError=error;console.warn('No se pudieron cargar canciones de la comunidad:',error);}
+  var allSongs=original.concat(community);
+  try{await Ratings.preload(allSongs.map(function(song){return String(song.id);}));}
+  catch(ratingError){console.warn('No se pudieron precargar calificaciones:',ratingError);}
+  cont.innerHTML='';
+  var originalGrid=el('div',{class:'explore-grid'});
+  original.forEach(function(song){originalGrid.appendChild(makeCard(song,false));});
+  if(original.length){
+    cont.appendChild(el('h2',{text:'Bandas sonoras del Top 10'}));
+    cont.lastChild.style.cssText="font:700 1.8rem Rajdhani,sans-serif;color:#fff;margin:8px 0 18px";
+    cont.appendChild(originalGrid);
+  }
+  if(community.length){
+    var heading=el('h2',{text:'Canciones de la comunidad'});
+    heading.style.cssText="font:700 1.8rem Rajdhani,sans-serif;color:#fff;margin:42px 0 18px";
+    cont.appendChild(heading);
+    var communityGrid=el('div',{class:'explore-grid'});
+    community.forEach(function(song){communityGrid.appendChild(makeCard(song,true));});
+    cont.appendChild(communityGrid);
+  }
+  if(communityError){
+    cont.appendChild(el('p',{class:'msg msg-info',text:'No se pudieron actualizar las canciones de la comunidad. Las canciones originales siguen disponibles.'}));
+  }
+  if(!allSongs.length){
+    cont.appendChild(el('p',{class:'msg msg-info',text:'Todavía no hay canciones en el catálogo.'}));
+  }
+})();;
+</script>
+</body>
+</html>
