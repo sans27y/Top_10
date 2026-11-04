@@ -1,55 +1,54 @@
-TOP 10 OST — INTEGRACIÓN SUPABASE
+TOP 10 OST — REACT + TAILWIND CSS + VITE + SUPABASE
 
-1. Conserva una copia de seguridad de tu sitio actual.
-2. En Supabase > SQL Editor, ejecuta TODO el archivo supabase_setup.sql.
-3. En Supabase > Authentication > Providers > Email, mantén Email habilitado y desactiva Confirm email. La web pide usuario y contraseña; no solicita Gmail.
-4. Copia todos los archivos de esta carpeta a la misma carpeta donde está publicado tu sitio. No cambies los nombres.
-5. Abre index.html y crea una cuenta NUEVA. Las cuentas antiguas guardadas solo en localStorage no se migran automáticamente; deben registrarse de nuevo.
-6. Prueba: registra dos usuarios, sube un MP3 desde uno, abre Explorar/Top 10 como visitante, y califica/comenta con el segundo usuario.
+TECNOLOGÍAS
+- React: interfaz y componentes de las páginas.
+- Tailwind CSS: utilidades de estilos; se conserva el CSS original para no alterar el diseño.
+- Vite: servidor de desarrollo y compilación.
+- Supabase: backend existente (Auth, PostgreSQL y Storage).
 
-IMPORTANTE: supabase-config.js contiene la clave publishable del proyecto que compartiste. Es una clave pública apta para frontend; nunca pongas aquí una clave service_role/secret. La seguridad depende de las políticas RLS incluidas en el SQL.
+REQUISITOS
+- Node.js 20.19+ o 22.12+.
+- npm.
+- Acceso al proyecto Supabase configurado para Top 10 OST.
 
-Las calificaciones y comentarios se guardan en Supabase y se comparten entre usuarios. Un usuario puede actualizar su propia calificación por canción. Los comentarios quedan asociados al autor. Visitantes pueden leerlos, pero deben iniciar sesión para publicar.
+INSTALACIÓN Y EJECUCIÓN
+1. Descomprime el ZIP.
+2. Abre la carpeta Top10_OST_Supabase_Completo en Visual Studio Code.
+3. Abre la terminal dentro de esa carpeta.
+4. Ejecuta: npm install
+5. Verifica que exista .env con VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY. Si falta, copia .env.example como .env y completa los valores de tu proyecto Supabase usando la clave publishable/anon.
+6. Ejecuta: npm run check
+7. Ejecuta: npm run dev
+8. Abre la URL local que indica Vite.
 
-La carpeta de canciones debe ser el bucket público llamado canciones. Se conserva el límite de 2 MB por MP3.
+COMPILACIÓN
+- Ejecuta: npm run build
+- Vite genera la versión de publicación dentro de dist/.
+- Publica el contenido de dist/ en un hosting estático que soporte las rutas HTML del proyecto.
 
-ACTUALIZACIÓN: imágenes y límite de 3 MB
-1. En Supabase abre SQL Editor y ejecuta MIGRACION_SUPABASE.sql.
-2. La tabla canciones_publicadas recibirá las columnas subida_por y cover_path.
-3. Se crea/configura el bucket público portadas.
-4. Cada publicación requiere un MP3 y una portada JPG, PNG o WEBP. Audio e imagen admiten hasta 3 MB cada uno.
-5. Después reemplaza los archivos del proyecto por los de este ZIP y recarga Live Server con Ctrl+F5.
+PÁGINAS
+- index.html: inicio de sesión.
+- registro.html: registro.
+- top10.html: ranking de 10 canciones.
+- explorar.html: catálogo original y canciones compartidas.
+- subir.html: publicación de MP3 y portada.
 
+BACKEND SUPABASE
+- Auth: registro e inicio de sesión.
+- PostgreSQL: canciones_publicadas, calificaciones y comentarios.
+- Storage: buckets canciones y portadas.
+- Se mantienen las operaciones existentes de calificar, comentar, publicar y consultar canciones.
+- MIGRACION_SUPABASE.sql contiene la configuración completa e idempotente para las tablas, RLS, buckets y políticas de almacenamiento. Ejecútalo en Supabase > SQL Editor si aún no está aplicada.
+- Las cuentas usan nombre de usuario como identificador de acceso y un correo interno terminado en .invalid. En Supabase Auth, desactiva la confirmación por correo para este flujo de registro con nombre de usuario; no se puede recibir un correo enviado a ese dominio.
+- No utilices nunca la clave service_role/secret en el frontend. La clave publishable/anon está diseñada para el cliente y debe estar protegida por RLS.
 
-CORRECCION DE CALIFICACIONES Y TOP 10:
-1. En Supabase abre SQL Editor > New query.
-2. Copia y ejecuta TODO MIGRACION_SUPABASE.sql.
-3. Espera el mensaje Success.
-4. Recarga la web con Ctrl+F5 desde Live Server.
-Este SQL crea/verifica las tablas compartidas calificaciones y comentarios, sus permisos RLS y los buckets. Si no ejecutas esta migracion, las calificaciones y comentarios no podran consultarse.
+AUDIO ORIGINAL
+El ZIP de origen no contenía los diez archivos MP3 locales. Para activar la reproducción de las canciones originales, agrega los archivos autorizados en public/sonidos/ con los nombres exactos indicados en public/sonidos/README.txt. Las canciones subidas por la comunidad se almacenan en Supabase Storage y no dependen de esa carpeta.
 
+ALMACENAMIENTO DE SESIÓN
+La aplicación no implementa almacenamiento propio de sesión en localStorage. Supabase Auth mantiene la sesión del cliente mediante su mecanismo persistente predeterminado del SDK; esto es parte del funcionamiento de Supabase Auth.
 
-ULTIMOS AJUSTES:
-- Explorar muestra el catálogo original del Top 10 con sus portadas y las canciones de la comunidad.
-- Las estrellas de Explorar usan el mismo estilo visual que Top 10.
-- Las calificaciones se precargan en una sola consulta por página.
-- Los comentarios se consultan solo al desplegar cada sección.
-- Las imágenes usan carga diferida y los audios no descargan metadatos hasta reproducirse.
-- Top 10 conserva las canciones originales aunque falle temporalmente la consulta de canciones comunitarias.
-
-
-ULTIMO AJUSTE DE INTERFAZ:
-- Comentarios ahora tiene etiqueta visible y flecha que rota al desplegar.
-- Reproductor personalizado con play/pausa, barra de progreso, tiempo transcurrido/duración y control de volumen.
-- Se mantiene la carga diferida de audio y el estilo visual oscuro/cian del sitio.
-
-
-CORRECCION DE ERROR DE RENDERIZADO:
-- Corregido el boton del reproductor: el helper DOM ahora recibe el texto como atributo, evitando TypeError al construir las tarjetas del Top 10.
-- Explorar deja espacio para el panel lateral para que no tape el encabezado.
-- Se registra el error real del Top 10 en la consola si ocurre otro problema.
-
-
-AJUSTE FINAL DEL REPRODUCTOR:
-- Control de volumen alineado a la derecha en la misma fila que play, tiempo y barra de progreso.
-- Distribución adaptable a pantallas estrechas sin que el volumen salte a una segunda fila.
+NOTAS DE VALIDACIÓN
+- npm run check revisa la estructura del proyecto, dependencias declaradas, configuración y sintaxis de los scripts JavaScript clásicos.
+- npm run build valida la compilación de React/Vite; debe ejecutarse después de npm install.
+- Para probar el flujo completo, verifica además las políticas y los buckets en tu propio proyecto Supabase, crea una cuenta de prueba y realiza una publicación, calificación y comentario.

@@ -1,6 +1,25 @@
 -- Ejecuta este script en Supabase > SQL Editor.
 -- Mantiene públicas las lecturas y exige sesión para publicar.
 
+create table if not exists public.canciones_publicadas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  titulo text not null,
+  videojuego text not null,
+  compositor text not null,
+  subida_por text,
+  audio_path text not null,
+  cover_path text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.canciones_publicadas add column if not exists user_id uuid references auth.users(id) on delete cascade;
+alter table public.canciones_publicadas add column if not exists titulo text;
+alter table public.canciones_publicadas add column if not exists videojuego text;
+alter table public.canciones_publicadas add column if not exists compositor text;
+alter table public.canciones_publicadas add column if not exists audio_path text;
+alter table public.canciones_publicadas add column if not exists created_at timestamptz not null default now();
+
 alter table public.canciones_publicadas add column if not exists subida_por text;
 alter table public.canciones_publicadas add column if not exists cover_path text;
 
@@ -47,11 +66,14 @@ grant insert on public.comentarios to authenticated;
 -- Corrige la política de subida: Storage asigna el propietario al crear el objeto.
 drop policy if exists "Subida autenticada de MP3" on storage.objects;
 create policy "Subida autenticada de MP3" on storage.objects for insert to authenticated
-with check (bucket_id = 'canciones' and lower(storage.extension(name)) = 'mp3');
+with check (bucket_id = 'canciones' and lower(storage.extension(name)) = 'mp3'
+  and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- Límite de 3 MB para audio y portadas.
-update storage.buckets set public = true, file_size_limit = 3145728,
-  allowed_mime_types = array['audio/mpeg'] where id = 'canciones';
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('canciones', 'canciones', true, 3145728, array['audio/mpeg'])
+on conflict (id) do update set public = true, file_size_limit = 3145728,
+  allowed_mime_types = array['audio/mpeg'];
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('portadas', 'portadas', true, 3145728, array['image/jpeg','image/png','image/webp'])
@@ -63,4 +85,8 @@ create policy "Lectura publica de portadas" on storage.objects for select to ano
 using (bucket_id = 'portadas');
 drop policy if exists "Usuarios autenticados suben portadas" on storage.objects;
 create policy "Usuarios autenticados suben portadas" on storage.objects for insert to authenticated
-with check (bucket_id = 'portadas' and lower(storage.extension(name)) in ('jpg','jpeg','png','webp'));
+with check (bucket_id = 'portadas' and lower(storage.extension(name)) in ('jpg','jpeg','png','webp')
+  and (storage.foldername(name))[1] = auth.uid()::text);
+
+create index if not exists idx_calificaciones_cancion_id on public.calificaciones(cancion_id);
+create index if not exists idx_comentarios_cancion_created on public.comentarios(cancion_id, created_at);
