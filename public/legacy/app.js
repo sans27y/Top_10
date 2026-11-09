@@ -1,10 +1,5 @@
-/* =========================================================
-   Top 10 OST - lógica compartida (sin backend, solo localStorage)
-   ========================================================= */
+var MAX_AUDIO_BYTES = 3 * 1024 * 1024;
 
-var MAX_AUDIO_BYTES = 3 * 1024 * 1024; // máximo 3 MB por canción
-
-/* ---------- SHA-256 (RNF01: no guardar contraseñas en texto plano) ---------- */
 function sha256(ascii) {
   function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
   var K = [
@@ -80,7 +75,6 @@ function sha256(ascii) {
   return out;
 }
 
-/* ---------- Acceso seguro a localStorage ---------- */
 var Store = {
   get: function (key, def) {
     try {
@@ -124,7 +118,6 @@ var Store = {
   }
 };
 
-/* ---------- Autenticación ---------- */
 var Auth = {
   users: function () { return Store.get('usuarios', {}); },
   usernameEmail: function (name) { return name.trim().toLowerCase() + '@usuarios.top10ost.invalid'; },
@@ -169,7 +162,6 @@ var Auth = {
   }
 };
 
-/* ---------- Foto de perfil ---------- */
 var DEFAULT_PFP = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#131a22"/>' +
   '<circle cx="40" cy="31" r="14" fill="#00ceff" opacity=".7"/><path d="M12 80c2-18 14-28 28-28s26 10 28 28z" fill="#00ceff" opacity=".7"/></svg>'
@@ -204,7 +196,6 @@ var Profile = {
   }
 };
 
-/* ---------- Canciones subidas por usuarios ---------- */
 var Songs = {
   list: function () {
     return Store.get('canciones_subidas', []);
@@ -283,7 +274,6 @@ var Songs = {
   }
 };
 
-/* ---------- Calificaciones por canción ---------- */
 var Ratings = {
   cache: {},
   getAll: function () { return Store.get('calificaciones', {}); },
@@ -334,14 +324,12 @@ function buildRating(songId, onRate) {
   return box;
 }
 
-/* ---------- Comentarios ---------- */
 var Comments = {
   MAX:500,
   get: function(songId){ return window.CloudCommunity.getComments(songId); },
   add: async function(songId,user,text){ return window.CloudCommunity.comment(songId,text); }
 };
 
-/* ---------- Utilidades de interfaz ---------- */
 function el(tag, attrs, children) {
   var n = document.createElement(tag);
   attrs = attrs || {};
@@ -363,9 +351,6 @@ function el(tag, attrs, children) {
   return n;
 }
 
-/* ---------- Reproductor personalizado ---------- */
-
-// Guarda el reproductor que está sonando actualmente.
 var activeAudioPlayer = null;
 
 function buildAudio(src) {
@@ -498,7 +483,6 @@ function buildAudio(src) {
   return wrap;
 }
 
-/* ---------- Comentarios: todos los ven, solo con sesión se comenta ---------- */
 function buildComments(songId) {
   var det=el('details',{class:'comments'}), sum=el('summary'), list=el('div',{class:'comment-list'});
   sum.appendChild(el('span',{class:'comments-chevron','aria-hidden':'true',text:'▸'}));
@@ -536,7 +520,6 @@ function buildComments(songId) {
   det.appendChild(el('div',{class:'comment-form'},[ta,btn,msg])); return det;
 }
 
-/* ---------- Panel lateral con perfil, navegación y sesión ---------- */
 function mountUserPanel(active) {
   var user = Auth.current();
 
@@ -664,7 +647,6 @@ function mountUserPanel(active) {
   document.body.insertBefore(panel, document.body.firstChild);
 }
 
-/* ---------- Redirigir al inicio de sesión ---------- */
 function promptLogin(action) {
   if (confirm(
     'Debes iniciar sesión para ' + action +
@@ -673,3 +655,41 @@ function promptLogin(action) {
     window.location.href = 'index.html';
   }
 }
+
+(function () {
+  var COPYRIGHT_URL = 'https://www.derechodeautor.gov.co/';
+
+  function agregarPieCopyright() {
+    if (document.getElementById('site-footer')) return;
+
+    var estilo = document.createElement('style');
+    estilo.textContent =
+      '#site-footer{box-sizing:border-box;width:100%;margin-top:40px;padding:18px 16px;text-align:center;' +
+      'font:12px/1.6 Arial,sans-serif;color:#91a7b5;border-top:1px solid rgba(0,206,255,.2);' +
+      'background:rgba(5,9,14,.85)}' +
+      '#site-footer a{color:#00ceff;font-weight:bold;text-decoration:underline;margin-left:6px}' +
+      '#site-footer a:hover{color:#7be5ff}' +
+      '#site-footer.footer-fijo{position:fixed;left:0;right:0;bottom:0;margin-top:0;z-index:50}';
+    document.head.appendChild(estilo);
+
+    var pie = document.createElement('footer');
+    pie.id = 'site-footer';
+    pie.innerHTML =
+      '© ' + new Date().getFullYear() + ' Top 10 OST · Proyecto académico sin fines de lucro. ' +
+      'Las canciones, portadas y marcas pertenecen a sus respectivos titulares. ' +
+      '<a href="' + COPYRIGHT_URL + '" target="_blank" rel="noopener noreferrer" ' +
+      'title="Información oficial sobre derechos de autor (Dirección Nacional de Derecho de Autor)">Copyright</a>';
+
+    if (window.getComputedStyle(document.body).display === 'flex') {
+      pie.className = 'footer-fijo';
+      document.body.style.paddingBottom = '90px';
+    }
+    document.body.appendChild(pie);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', agregarPieCopyright);
+  } else {
+    agregarPieCopyright();
+  }
+})();
